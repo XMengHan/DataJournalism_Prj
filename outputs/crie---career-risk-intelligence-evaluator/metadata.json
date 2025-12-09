@@ -1,0 +1,5 @@
+{
+  "name": "CRIE - Career Risk Intelligence Evaluator",
+  "description": "An AI-powered system to evaluate college major choices based on Gaokao scores, analyzing AI replacement risks and employment trends.",
+  "requestFramePermissions": []
+}
