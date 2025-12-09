@@ -586,9 +586,9 @@ in the Software without restriction...
 
 ### Author
 
-- **Name**: [Your Name]
-- **Email**: [your.email@example.com](mailto:your.email@example.com)
-- **GitHub**: [@yourusername](https://github.com/yourusername)
+- **Name**: [XuHaoran]
+- **Email**: [xuhaoran.whu@qq.com](mailto:your.email@example.com)
+- **GitHub**: [@XMengHan](https://github.com/yourusername)
 
 ### Contributing
 
