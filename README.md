@@ -381,7 +381,7 @@ Callbacks: EarlyStopping, ReduceLROnPlateau
 
 ### Figure 1: Platform Distribution
 
-![01_platform_distribution](.\.git\01_platform_distribution.png)
+![01_platform_distribution](\.git\01_platform_distribution.png)
 
 - Shows comment distribution across Zhihu, Weibo, Bilibili
 
