@@ -380,27 +380,23 @@ Callbacks: EarlyStopping, ReduceLROnPlateau
 ## 📈 Visualizations
 
 ### Figure 1: Platform Distribution
-
-![01_platform_distribution](\.git\01_platform_distribution.png)
+<img src=".\.git\01_platform_distribution.png" style="zoom:200%;" />
 
 - Shows comment distribution across Zhihu, Weibo, Bilibili
 
 ### Figure 2: BERT Sentiment Distribution
-
-![02_bert_sentiment_distribution](.\.git\02_bert_sentiment_distribution.png)
+<img src=".\.git\02_bert_sentiment_distribution.png" style="zoom:200%;" />
 
 - Pie chart of overall sentiment
 - Bar chart of confidence scores
 
 ### Figure 3: Top 15 Majors Recommendation Ranking
-
-![03_recommendation_ranking](.\.git\03_recommendation_ranking.png)
+<img src=".\.git\03_recommendation_ranking.png" style="zoom:200%;" />
 
 - Horizontal bar chart sorted by recommendation score
 
 ### Figure 4: Sentiment Comparison
-
-![04_sentiment_comparison](.\.git\04_sentiment_comparison.png)
+<img src=".\.git\04_sentiment_comparison.png" style="zoom:200%;" />
 
 - Positive vs Negative rates for top majors
 
@@ -421,15 +417,14 @@ Callbacks: EarlyStopping, ReduceLROnPlateau
 - **Quadrants**: Clearly marked zones
 
 ### Figure 6: Salary Comparison
-
-![06_salary_comparison](.\.git\06_salary_comparison.png)
+<img src=".\.git\06_salary_comparison.png" style="zoom:200%;" />
 
 - Bachelor vs Master salary comparison
 - Education premium rate ranking
 
 ### Figure 7: Employment Improvement
+<img src=".\.git\07_employment_improvement.png" style="zoom:200%;" />
 
-![07_employment_improvement](.\.git\07_employment_improvement.png)
 
 - Employment rate boost from pursuing master's degree
 
