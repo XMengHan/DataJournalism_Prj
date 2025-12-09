@@ -614,7 +614,7 @@ If you use this project in your research, please cite:
 
 ```bibtex
 @misc{zhang_major_analysis_2025,
-  author = {Your Name},
+  author = {MengXiaohan@whu.edu.cn},
   title = {Zhang Xuefeng Major Recommendation Analysis: Sentiment vs Reality},
   year = {2025},
   publisher = {GitHub},
