@@ -381,32 +381,32 @@ Callbacks: EarlyStopping, ReduceLROnPlateau
 
 ### Figure 1: Platform Distribution
 
-![01_platform_distribution](D:\Users\徐浩然\Desktop\User\本科课程\新闻安全分析\DataJournalism_MajorAnalysis\visualizations\charts\01_platform_distribution.png)
+![01_platform_distribution](.\visualizations\charts\01_platform_distribution.png)
 
 - Shows comment distribution across Zhihu, Weibo, Bilibili
 
 ### Figure 2: BERT Sentiment Distribution
 
-![02_bert_sentiment_distribution](D:\Users\徐浩然\Desktop\User\本科课程\新闻安全分析\DataJournalism_MajorAnalysis\visualizations\charts\02_bert_sentiment_distribution.png)
+![02_bert_sentiment_distribution](.\visualizations\charts\02_bert_sentiment_distribution.png)
 
 - Pie chart of overall sentiment
 - Bar chart of confidence scores
 
 ### Figure 3: Top 15 Majors Recommendation Ranking
 
-![03_recommendation_ranking](D:\Users\徐浩然\Desktop\User\本科课程\新闻安全分析\DataJournalism_MajorAnalysis\visualizations\charts\03_recommendation_ranking.png)
+![03_recommendation_ranking](.\visualizations\charts\03_recommendation_ranking.png)
 
 - Horizontal bar chart sorted by recommendation score
 
 ### Figure 4: Sentiment Comparison
 
-![Comparison](https://vip.51kaixin.cloud/c/docs/images/comparison_example.png)
+![04_sentiment_comparison](.\visualizations\charts\04_sentiment_comparison.png)
 
 - Positive vs Negative rates for top majors
 
 ### 🎯 Figure 5: Bubble Chart (Core Visualization)
 
-<img src="D:\Users\徐浩然\Desktop\User\本科课程\新闻安全分析\DataJournalism_MajorAnalysis\visualizations\plot1_bubble_chart.png" style="zoom:200%;" />
+<img src=".\visualizations\plot1_bubble_chart.png" style="zoom:200%;" />
 
 **Features:**
 
@@ -422,14 +422,14 @@ Callbacks: EarlyStopping, ReduceLROnPlateau
 
 ### Figure 6: Salary Comparison
 
-![06_salary_comparison](D:\Users\徐浩然\Desktop\User\本科课程\新闻安全分析\DataJournalism_MajorAnalysis\visualizations\charts\06_salary_comparison.png)
+![06_salary_comparison](.\visualizations\charts\06_salary_comparison.png)
 
 - Bachelor vs Master salary comparison
 - Education premium rate ranking
 
 ### Figure 7: Employment Improvement
 
-![07_employment_improvement](D:\Users\徐浩然\Desktop\User\本科课程\新闻安全分析\DataJournalism_MajorAnalysis\visualizations\charts\07_employment_improvement.png)
+![07_employment_improvement](.\visualizations\charts\07_employment_improvement.png)
 
 - Employment rate boost from pursuing master's degree
 
