@@ -11,7 +11,11 @@ import seaborn as sns
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
+from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
+from math import pi
 import warnings
+warnings.filterwarnings('ignore')
 warnings.filterwarnings('ignore')
 
 # BERT模型
@@ -974,6 +978,621 @@ def export_all_tables(df_all, df_sentiment, df_integrated, df_by_type):
     
     print()
 
+def create_sentiment_vs_employment_charts(df_integrated, df_sentiment):
+    """
+    创建多元化的舆情推荐 vs 现实就业率对比图表
+    
+    参数:
+        df_integrated: 整合了舆情和就业数据的DataFrame
+        df_sentiment: 舆情分析结果DataFrame
+    """
+    
+    if df_integrated is None or len(df_integrated) == 0:
+        print("⚠️ No integrated data available for comparison charts")
+        return
+    
+    print("="*70)
+    print("🎨 Creating Sentiment vs Employment Comparison Charts")
+    print("="*70 + "\n")
+    
+    # 选取Top 15专业（按讨论热度）
+    top15 = df_integrated.nlargest(15, 'mention_count').copy()
+    
+    # ==================== 图表1: 双轴柱状对比图 ====================
+    create_dual_axis_bar_chart(top15)
+    
+    # ==================== 图表2: 散点相关性图（带回归线）====================
+    create_correlation_scatter(df_integrated)
+    
+    # ==================== 图表3: 雷达图/蜘蛛图 ====================
+    create_radar_chart(top15)
+    
+    # ==================== 图表4: 热力图矩阵 ====================
+    create_heatmap_matrix(top15)
+    
+    # ==================== 图表5: 差异瀑布图 ====================
+    create_waterfall_chart(top15)
+    
+    # ==================== 图表6: 综合仪表盘 ====================
+    create_comprehensive_dashboard(top15)
+    
+    # ==================== 图表7: 交互式Plotly多维度图 ====================
+    create_interactive_plotly_chart(df_integrated)
+    
+    print("\n" + "="*70)
+    print("✅ All Sentiment vs Employment charts completed!")
+    print("="*70 + "\n")
+
+
+def create_dual_axis_bar_chart(df):
+    """图表1: 双轴柱状对比图 - 舆情推荐度 vs 就业率"""
+    
+    print("Creating dual-axis bar chart...")
+    
+    fig, ax1 = plt.subplots(figsize=(16, 10))
+    
+    x = np.arange(len(df))
+    width = 0.35
+    
+    # 按推荐度排序
+    df_sorted = df.sort_values('recommendation_score', ascending=False)
+    
+    # 左轴: 舆情推荐度（柱状图）
+    bars1 = ax1.bar(x - width/2, df_sorted['recommendation_score'], width,
+                    label='Sentiment Recommendation Score', color='#3498db', 
+                    alpha=0.8, edgecolor='black', linewidth=1.2)
+    
+    ax1.set_xlabel('Major', fontsize=13, fontweight='bold')
+    ax1.set_ylabel('Recommendation Score', fontsize=13, fontweight='bold', color='#3498db')
+    ax1.tick_params(axis='y', labelcolor='#3498db')
+    ax1.set_ylim(0, max(df_sorted['recommendation_score']) * 1.2)
+    
+    # 右轴: 就业率（柱状图）
+    ax2 = ax1.twinx()
+    bars2 = ax2.bar(x + width/2, df_sorted['本科就业率'], width,
+                    label='Employment Rate (%)', color='#e74c3c',
+                    alpha=0.8, edgecolor='black', linewidth=1.2)
+    
+    ax2.set_ylabel('Employment Rate (%)', fontsize=13, fontweight='bold', color='#e74c3c')
+    ax2.tick_params(axis='y', labelcolor='#e74c3c')
+    ax2.set_ylim(60, 100)
+    
+    # X轴标签
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(df_sorted['major'], rotation=45, ha='right', fontsize=11)
+    
+    # 添加数值标签
+    for bar in bars1:
+        height = bar.get_height()
+        ax1.annotate(f'{height:.1f}',
+                    xy=(bar.get_x() + bar.get_width() / 2, height),
+                    xytext=(0, 3), textcoords="offset points",
+                    ha='center', va='bottom', fontsize=9, fontweight='bold', color='#3498db')
+    
+    for bar in bars2:
+        height = bar.get_height()
+        ax2.annotate(f'{height:.1f}%',
+                    xy=(bar.get_x() + bar.get_width() / 2, height),
+                    xytext=(0, 3), textcoords="offset points",
+                    ha='center', va='bottom', fontsize=9, fontweight='bold', color='#e74c3c')
+    
+    # 图例
+    legend_elements = [
+        Patch(facecolor='#3498db', edgecolor='black', alpha=0.8, label='Sentiment Recommendation Score'),
+        Patch(facecolor='#e74c3c', edgecolor='black', alpha=0.8, label='Employment Rate (%)')
+    ]
+    ax1.legend(handles=legend_elements, loc='upper right', fontsize=11, framealpha=0.95)
+    
+    plt.title('Top 15 Majors: Sentiment Recommendation vs Employment Rate\n(Dual-Axis Comparison)',
+             fontsize=16, fontweight='bold', pad=20)
+    
+    plt.tight_layout()
+    plt.savefig('./output/figures/09_dual_axis_comparison.png', dpi=300, bbox_inches='tight', facecolor='white')
+    plt.close()
+    print("✅ Figure 9: Dual-Axis Bar Chart")
+
+
+def create_correlation_scatter(df):
+    """图表2: 散点相关性图（带回归线和置信区间）"""
+    
+    print("Creating correlation scatter plot...")
+    
+    fig, axes = plt.subplots(1, 2, figsize=(18, 8))
+    
+    # 子图1: 推荐度 vs 就业率
+    ax1 = axes[0]
+    
+    # 计算相关系数
+    corr1 = df['recommendation_score'].corr(df['本科就业率'])
+    
+    # 绘制散点
+    scatter1 = ax1.scatter(df['recommendation_score'], df['本科就业率'],
+                          s=df['mention_count'] * 5, c=df['sentiment_index'],
+                          cmap='RdYlGn', alpha=0.7, edgecolors='black', linewidth=1.5)
+    
+    # 添加回归线
+    z = np.polyfit(df['recommendation_score'], df['本科就业率'], 1)
+    p = np.poly1d(z)
+    x_line = np.linspace(df['recommendation_score'].min(), df['recommendation_score'].max(), 100)
+    ax1.plot(x_line, p(x_line), "r--", linewidth=2, alpha=0.8, label=f'Regression (r={corr1:.3f})')
+    
+    # 添加专业标签
+    for idx, row in df.iterrows():
+        ax1.annotate(row['major'], (row['recommendation_score'], row['本科就业率']),
+                    xytext=(5, 5), textcoords='offset points', fontsize=8,
+                    bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7))
+    
+    ax1.set_xlabel('Sentiment Recommendation Score', fontsize=12, fontweight='bold')
+    ax1.set_ylabel('Employment Rate (%)', fontsize=12, fontweight='bold')
+    ax1.set_title(f'Recommendation Score vs Employment Rate\n(Correlation: r = {corr1:.3f})',
+                 fontsize=13, fontweight='bold')
+    ax1.legend(loc='lower right', fontsize=10)
+    ax1.grid(True, alpha=0.3)
+    
+    # 颜色条
+    cbar1 = plt.colorbar(scatter1, ax=ax1)
+    cbar1.set_label('Sentiment Index', fontsize=10)
+    
+    # 子图2: 正面情感率 vs 本科月薪
+    ax2 = axes[1]
+    
+    corr2 = df['positive_rate'].corr(df['本科月薪'])
+    
+    scatter2 = ax2.scatter(df['positive_rate'], df['本科月薪'],
+                          s=df['mention_count'] * 5, c=df['本科就业率'],
+                          cmap='viridis', alpha=0.7, edgecolors='black', linewidth=1.5)
+    
+    z2 = np.polyfit(df['positive_rate'].dropna(), df['本科月薪'].dropna(), 1)
+    p2 = np.poly1d(z2)
+    x_line2 = np.linspace(df['positive_rate'].min(), df['positive_rate'].max(), 100)
+    ax2.plot(x_line2, p2(x_line2), "b--", linewidth=2, alpha=0.8, label=f'Regression (r={corr2:.3f})')
+    
+    for idx, row in df.iterrows():
+        ax2.annotate(row['major'], (row['positive_rate'], row['本科月薪']),
+                    xytext=(5, 5), textcoords='offset points', fontsize=8,
+                    bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7))
+    
+    ax2.set_xlabel('Positive Sentiment Rate (%)', fontsize=12, fontweight='bold')
+    ax2.set_ylabel('Bachelor Monthly Salary (CNY)', fontsize=12, fontweight='bold')
+    ax2.set_title(f'Positive Rate vs Salary\n(Correlation: r = {corr2:.3f})',
+                 fontsize=13, fontweight='bold')
+    ax2.legend(loc='lower right', fontsize=10)
+    ax2.grid(True, alpha=0.3)
+    
+    cbar2 = plt.colorbar(scatter2, ax=ax2)
+    cbar2.set_label('Employment Rate (%)', fontsize=10)
+    
+    plt.suptitle('Sentiment Indicators vs Employment Reality: Correlation Analysis',
+                fontsize=15, fontweight='bold', y=1.02)
+    plt.tight_layout()
+    plt.savefig('./output/figures/10_correlation_scatter.png', dpi=300, bbox_inches='tight', facecolor='white')
+    plt.close()
+    print("✅ Figure 10: Correlation Scatter Plot")
+
+
+def create_radar_chart(df):
+    """图表3: 雷达图 - 多维度对比"""
+    
+    print("Creating radar chart...")
+    
+    # 选择Top 6专业（雷达图太多会很乱）
+    top6 = df.nlargest(6, 'mention_count').copy()
+    
+    # 标准化数据到0-100
+    metrics = ['recommendation_score', '本科就业率', '本科月薪', 'positive_rate', 'mention_count']
+    metric_labels = ['Recommendation\nScore', 'Employment\nRate', 'Salary', 'Positive\nRate', 'Discussion\nVolume']
+    
+    df_normalized = top6.copy()
+    for metric in metrics:
+        min_val = df_normalized[metric].min()
+        max_val = df_normalized[metric].max()
+        if max_val > min_val:
+            df_normalized[metric + '_norm'] = (df_normalized[metric] - min_val) / (max_val - min_val) * 100
+        else:
+            df_normalized[metric + '_norm'] = 50
+    
+    # 雷达图设置
+    num_vars = len(metrics)
+    angles = [n / float(num_vars) * 2 * pi for n in range(num_vars)]
+    angles += angles[:1]  # 闭合
+    
+    fig, ax = plt.subplots(figsize=(12, 12), subplot_kw=dict(polar=True))
+    
+    colors = ['#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#f39c12', '#1abc9c']
+    
+    for i, (idx, row) in enumerate(df_normalized.iterrows()):
+        values = [row[m + '_norm'] for m in metrics]
+        values += values[:1]
+        
+        ax.plot(angles, values, 'o-', linewidth=2.5, label=row['major'], color=colors[i], alpha=0.8)
+        ax.fill(angles, values, alpha=0.15, color=colors[i])
+    
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(metric_labels, fontsize=11, fontweight='bold')
+    ax.set_ylim(0, 100)
+    
+    plt.legend(loc='upper right', bbox_to_anchor=(1.3, 1.0), fontsize=10, framealpha=0.95)
+    plt.title('Top 6 Majors: Multi-Dimensional Radar Comparison\n(Normalized to 0-100 Scale)',
+             fontsize=14, fontweight='bold', pad=20)
+    
+    plt.tight_layout()
+    plt.savefig('./output/figures/11_radar_chart.png', dpi=300, bbox_inches='tight', facecolor='white')
+    plt.close()
+    print("✅ Figure 11: Radar Chart")
+
+
+def create_heatmap_matrix(df):
+    """图表4: 热力图矩阵 - 相关性分析"""
+    
+    print("Creating heatmap matrix...")
+    
+    # 选择关键指标
+    metrics = ['recommendation_score', 'positive_rate', 'negative_rate', 'sentiment_index',
+               '本科就业率', '本科月薪', '硕士就业率', '硕士月薪', 'mention_count']
+    
+    # 过滤存在的列
+    available_metrics = [m for m in metrics if m in df.columns]
+    
+    # 计算相关系数矩阵
+    corr_matrix = df[available_metrics].corr()
+    
+    # 创建热力图
+    fig, ax = plt.subplots(figsize=(14, 12))
+    
+    # 使用更好的颜色映射
+    mask = np.triu(np.ones_like(corr_matrix, dtype=bool), k=1)
+    
+    sns.heatmap(corr_matrix, mask=mask, annot=True, fmt='.2f', cmap='RdYlGn',
+                center=0, vmin=-1, vmax=1, square=True, linewidths=0.5,
+                annot_kws={'fontsize': 10, 'fontweight': 'bold'},
+                cbar_kws={'shrink': 0.8, 'label': 'Correlation Coefficient'})
+    
+    # 美化标签
+    labels_map = {
+        'recommendation_score': 'Recommendation Score',
+        'positive_rate': 'Positive Rate',
+        'negative_rate': 'Negative Rate',
+        'sentiment_index': 'Sentiment Index',
+        '本科就业率': 'Bachelor Employment Rate',
+        '本科月薪': 'Bachelor Salary',
+        '硕士就业率': 'Master Employment Rate',
+        '硕士月薪': 'Master Salary',
+        'mention_count': 'Discussion Volume'
+    }
+    
+    new_labels = [labels_map.get(m, m) for m in available_metrics]
+    ax.set_xticklabels(new_labels, rotation=45, ha='right', fontsize=10)
+    ax.set_yticklabels(new_labels, rotation=0, fontsize=10)
+    
+    plt.title('Correlation Matrix: Sentiment Indicators vs Employment Metrics\n' +
+             '(Green = Positive Correlation, Red = Negative Correlation)',
+             fontsize=14, fontweight='bold', pad=20)
+    
+    plt.tight_layout()
+    plt.savefig('./output/figures/12_correlation_heatmap.png', dpi=300, bbox_inches='tight', facecolor='white')
+    plt.close()
+    print("✅ Figure 12: Correlation Heatmap")
+
+
+def create_waterfall_chart(df):
+    """图表5: 差异瀑布图 - 舆情排名 vs 就业排名差异"""
+    
+    print("Creating waterfall/deviation chart...")
+    
+    # 计算排名差异
+    df_sorted = df.copy()
+    df_sorted['sentiment_rank'] = df_sorted['recommendation_score'].rank(ascending=False)
+    df_sorted['employment_rank'] = df_sorted['本科就业率'].rank(ascending=False)
+    df_sorted['rank_diff'] = df_sorted['employment_rank'] - df_sorted['sentiment_rank']
+    
+    # 按差异大小排序
+    df_sorted = df_sorted.sort_values('rank_diff')
+    
+    fig, ax = plt.subplots(figsize=(14, 10))
+    
+    colors = ['#e74c3c' if x > 0 else '#2ecc71' for x in df_sorted['rank_diff']]
+    
+    bars = ax.barh(df_sorted['major'], df_sorted['rank_diff'], color=colors, 
+                   alpha=0.8, edgecolor='black', linewidth=1.2)
+    
+    ax.axvline(x=0, color='black', linestyle='-', linewidth=2)
+    
+    # 添加数值标签
+    for i, (idx, row) in enumerate(df_sorted.iterrows()):
+        diff = row['rank_diff']
+        label = f"+{diff:.0f}" if diff > 0 else f"{diff:.0f}"
+        x_pos = diff + (0.3 if diff >= 0 else -0.3)
+        ax.text(x_pos, i, label, va='center', ha='left' if diff >= 0 else 'right',
+               fontsize=10, fontweight='bold')
+    
+    # 添加图例说明
+    legend_elements = [
+        Patch(facecolor='#2ecc71', edgecolor='black', alpha=0.8, 
+              label='Underrated (Employment rank > Sentiment rank)'),
+        Patch(facecolor='#e74c3c', edgecolor='black', alpha=0.8, 
+              label='Overrated (Sentiment rank > Employment rank)')
+    ]
+    ax.legend(handles=legend_elements, loc='lower right', fontsize=10, framealpha=0.95)
+    
+    ax.set_xlabel('Rank Difference (Employment Rank - Sentiment Rank)', fontsize=12, fontweight='bold')
+    ax.set_title('Major Ranking Gap: Social Media Perception vs Employment Reality\n' +
+                '(Negative = Overrated in Social Media, Positive = Underrated)',
+                fontsize=14, fontweight='bold', pad=20)
+    ax.grid(axis='x', alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig('./output/figures/13_rank_deviation.png', dpi=300, bbox_inches='tight', facecolor='white')
+    plt.close()
+    print("✅ Figure 13: Rank Deviation Chart")
+
+
+def create_comprehensive_dashboard(df):
+    """图表6: 综合仪表盘 - 多维度对比"""
+    
+    print("Creating comprehensive dashboard...")
+    
+    fig = plt.figure(figsize=(20, 16))
+    
+    # 创建子图布局
+    gs = fig.add_gridspec(3, 3, hspace=0.3, wspace=0.3)
+    
+    # ====== 子图1: 推荐度 vs 就业率散点 ======
+    ax1 = fig.add_subplot(gs[0, 0])
+    
+    scatter = ax1.scatter(df['recommendation_score'], df['本科就业率'],
+                         s=100, c=df['sentiment_index'], cmap='RdYlGn',
+                         alpha=0.7, edgecolors='black')
+    ax1.set_xlabel('Recommendation Score', fontsize=10)
+    ax1.set_ylabel('Employment Rate (%)', fontsize=10)
+    ax1.set_title('Recommendation vs Employment', fontsize=11, fontweight='bold')
+    ax1.grid(True, alpha=0.3)
+    plt.colorbar(scatter, ax=ax1, shrink=0.8, label='Sentiment')
+    
+    # ====== 子图2: 正负面情感对比柱状图 ======
+    ax2 = fig.add_subplot(gs[0, 1])
+    
+    x = np.arange(len(df))
+    width = 0.35
+    ax2.bar(x - width/2, df['positive_rate'], width, label='Positive', color='#2ecc71', alpha=0.8)
+    ax2.bar(x + width/2, df['negative_rate'], width, label='Negative', color='#e74c3c', alpha=0.8)
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(df['major'], rotation=90, fontsize=8)
+    ax2.set_ylabel('Rate (%)', fontsize=10)
+    ax2.set_title('Positive vs Negative Rate', fontsize=11, fontweight='bold')
+    ax2.legend(fontsize=8)
+    
+    # ====== 子图3: 本硕薪资对比 ======
+    ax3 = fig.add_subplot(gs[0, 2])
+    
+    ax3.bar(x - width/2, df['本科月薪'], width, label='Bachelor', color='#3498db', alpha=0.8)
+    ax3.bar(x + width/2, df['硕士月薪'], width, label='Master', color='#9b59b6', alpha=0.8)
+    ax3.set_xticks(x)
+    ax3.set_xticklabels(df['major'], rotation=90, fontsize=8)
+    ax3.set_ylabel('Monthly Salary (CNY)', fontsize=10)
+    ax3.set_title('Bachelor vs Master Salary', fontsize=11, fontweight='bold')
+    ax3.legend(fontsize=8)
+    
+    # ====== 子图4: 就业率提升散点 ======
+    ax4 = fig.add_subplot(gs[1, 0])
+    
+    improvement = df['硕士就业率'] - df['本科就业率']
+    colors = ['#2ecc71' if x > 0 else '#e74c3c' for x in improvement]
+    ax4.scatter(df['本科就业率'], improvement, s=100, c=colors, alpha=0.7, edgecolors='black')
+    ax4.axhline(y=0, color='gray', linestyle='--')
+    ax4.set_xlabel('Bachelor Employment Rate (%)', fontsize=10)
+    ax4.set_ylabel('Master Improvement (%)', fontsize=10)
+    ax4.set_title('Employment Improvement by Education', fontsize=11, fontweight='bold')
+    ax4.grid(True, alpha=0.3)
+    
+    # ====== 子图5: 讨论热度 vs 情感指数 ======
+    ax5 = fig.add_subplot(gs[1, 1])
+    
+    scatter5 = ax5.scatter(df['mention_count'], df['sentiment_index'],
+                          s=df['本科就业率'], c=df['本科月薪'], cmap='YlOrRd',
+                          alpha=0.7, edgecolors='black')
+    ax5.set_xlabel('Discussion Volume', fontsize=10)
+    ax5.set_ylabel('Sentiment Index', fontsize=10)
+    ax5.set_title('Volume vs Sentiment\n(Size=Employment, Color=Salary)', fontsize=11, fontweight='bold')
+    ax5.grid(True, alpha=0.3)
+    plt.colorbar(scatter5, ax=ax5, shrink=0.8)
+    
+    # ====== 子图6: 排名差异条形图 ======
+    ax6 = fig.add_subplot(gs[1, 2])
+    
+    df_temp = df.copy()
+    df_temp['sent_rank'] = df_temp['recommendation_score'].rank(ascending=False)
+    df_temp['emp_rank'] = df_temp['本科就业率'].rank(ascending=False)
+    df_temp['rank_diff'] = df_temp['emp_rank'] - df_temp['sent_rank']
+    df_temp = df_temp.sort_values('rank_diff')
+    
+    colors = ['#e74c3c' if x > 0 else '#2ecc71' for x in df_temp['rank_diff']]
+    ax6.barh(df_temp['major'], df_temp['rank_diff'], color=colors, alpha=0.8)
+    ax6.axvline(x=0, color='black', linestyle='-')
+    ax6.set_xlabel('Rank Difference', fontsize=10)
+    ax6.set_title('Sentiment vs Employment Rank Gap', fontsize=11, fontweight='bold')
+    
+    # ====== 子图7: 综合评分气泡图（横跨底部）======
+    ax7 = fig.add_subplot(gs[2, :])
+    
+    # 计算综合评分
+    df_temp = df.copy()
+    df_temp['composite_score'] = (
+        df_temp['recommendation_score'] * 0.3 +
+        df_temp['本科就业率'] * 0.4 +
+        df_temp['本科月薪'] / 100 * 0.3
+    )
+    df_temp = df_temp.sort_values('composite_score', ascending=False)
+    
+    scatter7 = ax7.scatter(df_temp['本科就业率'], df_temp['recommendation_score'],
+                          s=df_temp['本科月薪'] / 30, c=df_temp['composite_score'],
+                          cmap='Spectral', alpha=0.7, edgecolors='black', linewidth=1.5)
+    
+    for idx, row in df_temp.iterrows():
+        ax7.annotate(row['major'], (row['本科就业率'], row['recommendation_score']),
+                    xytext=(5, 5), textcoords='offset points', fontsize=9,
+                    bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7))
+    
+    ax7.set_xlabel('Employment Rate (%)', fontsize=12, fontweight='bold')
+    ax7.set_ylabel('Recommendation Score', fontsize=12, fontweight='bold')
+    ax7.set_title('Comprehensive View: Top 15 Majors\n(Size = Salary, Color = Composite Score)',
+                 fontsize=13, fontweight='bold')
+    ax7.grid(True, alpha=0.3)
+    
+    cbar = plt.colorbar(scatter7, ax=ax7, shrink=0.6, pad=0.02)
+    cbar.set_label('Composite Score', fontsize=10)
+    
+    plt.suptitle('Sentiment vs Employment: Comprehensive Dashboard\n' +
+                'Zhang Xuefeng Major Recommendation Analysis',
+                fontsize=16, fontweight='bold', y=1.01)
+    
+    plt.savefig('./output/figures/14_comprehensive_dashboard.png', dpi=300, bbox_inches='tight', facecolor='white')
+    plt.close()
+    print("✅ Figure 14: Comprehensive Dashboard")
+
+
+def create_interactive_plotly_chart(df):
+    """图表7: 交互式Plotly多维度图"""
+    
+    print("Creating interactive Plotly chart...")
+    
+    # 创建子图
+    fig = make_subplots(
+        rows=2, cols=2,
+        specs=[
+            [{"type": "scatter"}, {"type": "bar"}],
+            [{"type": "scatter"}, {"type": "bar"}]
+        ],
+        subplot_titles=(
+            'Recommendation Score vs Employment Rate',
+            'Positive vs Negative Sentiment by Major',
+            'Salary vs Discussion Volume',
+            'Employment Rate Comparison: Bachelor vs Master'
+        ),
+        vertical_spacing=0.12,
+        horizontal_spacing=0.1
+    )
+    
+    # 子图1: 推荐度 vs 就业率散点
+    fig.add_trace(
+        go.Scatter(
+            x=df['recommendation_score'],
+            y=df['本科就业率'],
+            mode='markers+text',
+            marker=dict(
+                size=df['mention_count'] / df['mention_count'].max() * 50 + 10,
+                color=df['sentiment_index'],
+                colorscale='RdYlGn',
+                showscale=True,
+                colorbar=dict(title='Sentiment', x=0.45)
+            ),
+            text=df['major'],
+            textposition='top center',
+            hovertemplate='<b>%{text}</b><br>Recommendation: %{x:.1f}<br>Employment: %{y:.1f}%<extra></extra>',
+            name='Majors'
+        ),
+        row=1, col=1
+    )
+    
+    # 子图2: 正负面情感柱状图
+    fig.add_trace(
+        go.Bar(
+            x=df['major'],
+            y=df['positive_rate'],
+            name='Positive',
+            marker_color='#2ecc71',
+            hovertemplate='%{x}<br>Positive: %{y:.1f}%<extra></extra>'
+        ),
+        row=1, col=2
+    )
+    fig.add_trace(
+        go.Bar(
+            x=df['major'],
+            y=df['negative_rate'],
+            name='Negative',
+            marker_color='#e74c3c',
+            hovertemplate='%{x}<br>Negative: %{y:.1f}%<extra></extra>'
+        ),
+        row=1, col=2
+    )
+    
+    # 子图3: 薪资 vs 讨论量
+    fig.add_trace(
+        go.Scatter(
+            x=df['mention_count'],
+            y=df['本科月薪'],
+            mode='markers+text',
+            marker=dict(
+                size=15,
+                color=df['本科就业率'],
+                colorscale='Viridis',
+                showscale=True,
+                colorbar=dict(title='Employment %', x=1.0)
+            ),
+            text=df['major'],
+            textposition='top center',
+            hovertemplate='<b>%{text}</b><br>Discussion: %{x}<br>Salary: ¥%{y:,.0f}<extra></extra>',
+            name='Majors',
+            showlegend=False
+        ),
+        row=2, col=1
+    )
+    
+    # 子图4: 本硕就业率对比
+    fig.add_trace(
+        go.Bar(
+            x=df['major'],
+            y=df['本科就业率'],
+            name='Bachelor',
+            marker_color='#3498db',
+            hovertemplate='%{x}<br>Bachelor: %{y:.1f}%<extra></extra>'
+        ),
+        row=2, col=2
+    )
+    fig.add_trace(
+        go.Bar(
+            x=df['major'],
+            y=df['硕士就业率'],
+            name='Master',
+            marker_color='#9b59b6',
+            hovertemplate='%{x}<br>Master: %{y:.1f}%<extra></extra>'
+        ),
+        row=2, col=2
+    )
+    
+    # 更新布局
+    fig.update_layout(
+        title=dict(
+            text='<b>Interactive Analysis: Sentiment vs Employment Reality</b><br>' +
+                 '<sup>Zhang Xuefeng Major Recommendation - Multi-Dimensional View</sup>',
+            font=dict(size=18)
+        ),
+        height=900,
+        width=1400,
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
+        barmode='group'
+    )
+    
+    # 更新轴标签
+    fig.update_xaxes(title_text='Recommendation Score', row=1, col=1)
+    fig.update_yaxes(title_text='Employment Rate (%)', row=1, col=1)
+    fig.update_xaxes(title_text='Major', tickangle=45, row=1, col=2)
+    fig.update_yaxes(title_text='Sentiment Rate (%)', row=1, col=2)
+    fig.update_xaxes(title_text='Discussion Volume', row=2, col=1)
+    fig.update_yaxes(title_text='Monthly Salary (CNY)', row=2, col=1)
+    fig.update_xaxes(title_text='Major', tickangle=45, row=2, col=2)
+    fig.update_yaxes(title_text='Employment Rate (%)', row=2, col=2)
+    
+    fig.write_html('./output/figures/15_interactive_dashboard.html')
+    print("✅ Figure 15: Interactive Plotly Dashboard (HTML)")
+
+
 
 # ==================== 主函数 ====================
 
@@ -1034,6 +1653,8 @@ def main():
     
     # Step 8: 生成增强可视化
     create_enhanced_visualizations(df_integrated)
+
+    create_sentiment_vs_employment_charts(df_integrated, df_sentiment)
     
     # Step 8b: 生成内容 vs 评论对比图
     create_content_vs_comment_comparison(df_by_type)

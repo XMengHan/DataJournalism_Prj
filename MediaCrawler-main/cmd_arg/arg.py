@@ -270,7 +270,7 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
 
 # uv run main.py --platform wb --type search --start 1 --get_comment 1 --get_sub_comment 1 --save_data_option csv
 # uv run main.py --platform zhihu --type search --start 1 --get_comment 1 --get_sub_comment 1 --save_data_option csv
-# uv run main.py --platform bili --type search --start 1 --get_comment 1 --get_sub_comment 1 --save data_option csv
-# uv run main.py --platform wb --type search --start 1 --get_comment 1 --get_sub_comment 1 --save data_option csv --keywords "ai替代就业"
-# uv run main.py --platform zhihu --type search --start 1 --get_comment 1 --get_sub_comment 1 --save_data_option csv --keywords "ai替代就业"
-# uv run main.py --platform bili --type search --start 1 --get_comment 1 --get_sub_comment 1 --save_data_option csv --keywords "ai替代就业"
+# uv run main.py --platform bili --type search --start 1 --get_comment 1 --get_sub_comment 1 --save_data_option csv
+# uv run main.py --platform wb --type search --start 1 --get_comment 1 --get_sub_comment 1 --save_data_option csv --keywords "本科就业与专业选择"
+# uv run main.py --platform zhihu --type search --start 1 --get_comment 1 --get_sub_comment 1 --save_data_option csv --keywords "本科就业与专业选择"
+# uv run main.py --platform bili --type search --start 1 --get_comment 1 --get_sub_comment 1 --save_data_option csv --keywords "本科就业与专业选择"
