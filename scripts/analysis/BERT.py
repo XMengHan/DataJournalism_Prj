@@ -1,6 +1,7 @@
 """
-张雪峰专业推荐综合分析系统 - 最终版
+张雪峰专业推荐综合分析系统 - 完整版（含Contents分析）
 真实BERT模型 + 真实数据 + 完整对比分析
+新增：微博/知乎 contents + B站 videos 数据纳入分析
 """
 
 import pandas as pd
@@ -49,14 +50,15 @@ print("\n" + "="*70)
 print("张雪峰专业推荐 - 舆情分析 vs 就业现实 综合分析系统")
 print("="*70 + "\n")
 
-# ==================== PART 1: 数据加载 ====================
+# ==================== PART 1: 数据加载（含Contents） ====================
 
 class RealDataLoader:
-    """加载真实数据"""
+    """加载真实数据（评论 + 内容）"""
     
     def __init__(self):
         self.base_path = './data/raw/'
         self.comments = {}
+        self.contents = {}
         
     def load_all_comments(self):
         """加载所有平台评论"""
@@ -65,32 +67,72 @@ class RealDataLoader:
         
         # 知乎评论
         try:
-            zhihu = pd.read_csv(f'{self.base_path}zhihu/csv/search_comments_2025-12-09.csv')
+            zhihu = pd.read_csv(f'{self.base_path}zhihu/search_comments_2025-12-09.csv')
             zhihu['platform'] = 'Zhihu'
+            zhihu['data_type'] = 'comment'
             self.comments['zhihu'] = zhihu
-            print(f"  ✅ Zhihu: {len(zhihu):,} comments")
+            print(f"  ✅ Zhihu Comments: {len(zhihu):,} records")
         except Exception as e:
-            print(f"  ⚠️ Zhihu failed: {e}")
+            print(f"  ⚠️ Zhihu comments failed: {e}")
         
         # 微博评论
         try:
-            weibo = pd.read_csv(f'{self.base_path}weibo/csv/search_comments_2025-12-09.csv')
+            weibo = pd.read_csv(f'{self.base_path}weibo/search_comments_2025-12-09.csv')
             weibo['platform'] = 'Weibo'
+            weibo['data_type'] = 'comment'
             self.comments['weibo'] = weibo
-            print(f"  ✅ Weibo: {len(weibo):,} comments")
+            print(f"  ✅ Weibo Comments: {len(weibo):,} records")
         except Exception as e:
-            print(f"  ⚠️ Weibo failed: {e}")
+            print(f"  ⚠️ Weibo comments failed: {e}")
         
         # B站评论
         try:
-            bili = pd.read_csv(f'{self.base_path}bili/csv/search_comments_2025-12-09.csv')
+            bili = pd.read_csv(f'{self.base_path}bili/search_comments_2025-12-09.csv')
             bili['platform'] = 'Bilibili'
+            bili['data_type'] = 'comment'
             self.comments['bili'] = bili
-            print(f"  ✅ Bilibili: {len(bili):,} comments")
+            print(f"  ✅ Bilibili Comments: {len(bili):,} records")
         except Exception as e:
-            print(f"  ⚠️ Bilibili failed: {e}")
+            print(f"  ⚠️ Bilibili comments failed: {e}")
         
         return self.comments
+    
+    def load_all_contents(self):
+        """加载所有平台的内容/帖子数据"""
+        
+        print("\n📥 Loading Content/Post Data...")
+        
+        # 知乎内容
+        try:
+            zhihu_content = pd.read_csv(f'{self.base_path}zhihu/search_contents_2025-12-09.csv')
+            zhihu_content['platform'] = 'Zhihu'
+            zhihu_content['data_type'] = 'content'
+            self.contents['zhihu'] = zhihu_content
+            print(f"  ✅ Zhihu Contents: {len(zhihu_content):,} records")
+        except Exception as e:
+            print(f"  ⚠️ Zhihu contents failed: {e}")
+        
+        # 微博内容
+        try:
+            weibo_content = pd.read_csv(f'{self.base_path}weibo/search_contents_2025-12-09.csv')
+            weibo_content['platform'] = 'Weibo'
+            weibo_content['data_type'] = 'content'
+            self.contents['weibo'] = weibo_content
+            print(f"  ✅ Weibo Contents: {len(weibo_content):,} records")
+        except Exception as e:
+            print(f"  ⚠️ Weibo contents failed: {e}")
+        
+        # B站视频
+        try:
+            bili_videos = pd.read_csv(f'{self.base_path}bili/search_videos_2025-12-09.csv')
+            bili_videos['platform'] = 'Bilibili'
+            bili_videos['data_type'] = 'video'
+            self.contents['bili'] = bili_videos
+            print(f"  ✅ Bilibili Videos: {len(bili_videos):,} records")
+        except Exception as e:
+            print(f"  ⚠️ Bilibili videos failed: {e}")
+        
+        return self.contents
     
     def standardize_comments(self):
         """标准化评论数据"""
@@ -113,17 +155,17 @@ class RealDataLoader:
                 df_copy['text'] = ''
             
             # 统一点赞字段
-            like_fields = ['like_count', 'likes', 'digg_count', 'attitudes_count']
+            like_fields = ['like_count', 'likes', 'digg_count', 'attitudes_count', 'liked_count']
             for field in like_fields:
                 if field in df_copy.columns:
-                    df_copy['likes'] = df_copy[field].fillna(0)
+                    df_copy['likes'] = pd.to_numeric(df_copy[field], errors='coerce').fillna(0)
                     break
             
             if 'likes' not in df_copy.columns:
                 df_copy['likes'] = 0
             
             # 选择核心字段
-            df_copy = df_copy[['text', 'likes', 'platform']].copy()
+            df_copy = df_copy[['text', 'likes', 'platform', 'data_type']].copy()
             unified.append(df_copy)
         
         df_all = pd.concat(unified, ignore_index=True)
@@ -141,6 +183,78 @@ class RealDataLoader:
         print(f"  Platform distribution:\n{df_all['platform'].value_counts()}\n")
         
         return df_all
+    
+    def standardize_contents(self):
+        """标准化内容/帖子数据"""
+        
+        print("🔄 Standardizing content data...")
+        
+        unified = []
+        
+        for platform, df in self.contents.items():
+            df_copy = df.copy()
+            
+            # 根据平台选择文本字段
+            if platform == 'zhihu':
+                # 知乎：合并 title + content_text + desc
+                title = df_copy.get('title', pd.Series([''] * len(df_copy))).fillna('')
+                content_text = df_copy.get('content_text', pd.Series([''] * len(df_copy))).fillna('')
+                desc = df_copy.get('desc', pd.Series([''] * len(df_copy))).fillna('')
+                df_copy['text'] = title.astype(str) + ' ' + content_text.astype(str) + ' ' + desc.astype(str)
+                
+                # 点赞数
+                df_copy['likes'] = pd.to_numeric(df_copy.get('voteup_count', 0), errors='coerce').fillna(0)
+                
+            elif platform == 'weibo':
+                # 微博：使用 content 字段
+                df_copy['text'] = df_copy.get('content', pd.Series([''] * len(df_copy))).fillna('')
+                df_copy['likes'] = pd.to_numeric(df_copy.get('liked_count', 0), errors='coerce').fillna(0)
+                
+            elif platform == 'bili':
+                # B站视频：合并 title + desc
+                title = df_copy.get('title', pd.Series([''] * len(df_copy))).fillna('')
+                desc = df_copy.get('desc', pd.Series([''] * len(df_copy))).fillna('')
+                df_copy['text'] = title.astype(str) + ' ' + desc.astype(str)
+                df_copy['likes'] = pd.to_numeric(df_copy.get('liked_count', 0), errors='coerce').fillna(0)
+            
+            # 选择核心字段
+            df_copy = df_copy[['text', 'likes', 'platform', 'data_type']].copy()
+            unified.append(df_copy)
+        
+        if not unified:
+            print("  ⚠️ No content data found")
+            return pd.DataFrame()
+        
+        df_all = pd.concat(unified, ignore_index=True)
+        
+        # 数据清洗
+        df_all = df_all[
+            (df_all['text'].notna()) &
+            (df_all['text'].str.len() > 10) &
+            (df_all['text'] != '')
+        ].copy()
+        
+        df_all['text_length'] = df_all['text'].str.len()
+        
+        print(f"  ✅ Total valid contents: {len(df_all):,}")
+        print(f"  Platform distribution:\n{df_all['platform'].value_counts()}")
+        print(f"  Data type distribution:\n{df_all['data_type'].value_counts()}\n")
+        
+        return df_all
+    
+    def merge_all_data(self, df_comments, df_contents):
+        """合并评论和内容数据"""
+        
+        print("🔗 Merging comments and contents...")
+        
+        df_all = pd.concat([df_comments, df_contents], ignore_index=True)
+        
+        print(f"  ✅ Total merged records: {len(df_all):,}")
+        print(f"  By data type:\n{df_all['data_type'].value_counts()}")
+        print(f"  By platform:\n{df_all['platform'].value_counts()}\n")
+        
+        return df_all
+
 
 def load_employment_data():
     """加载就业数据"""
@@ -155,6 +269,7 @@ def load_employment_data():
     except Exception as e:
         print(f"  ❌ Failed to load employment data: {e}")
         return None
+
 
 # ==================== PART 2: 真实BERT情感分析 ====================
 
@@ -223,7 +338,7 @@ class RealBERTAnalyzer:
         results = []
         total = len(texts)
         
-        print(f"🔄 Analyzing {total:,} comments with BERT...")
+        print(f"🔄 Analyzing {total:,} texts with BERT...")
         
         for i in range(0, total, batch_size):
             batch = texts[i:i+batch_size]
@@ -237,36 +352,62 @@ class RealBERTAnalyzer:
         print("  ✅ BERT analysis completed!\n")
         return results
 
+
 # ==================== PART 3: 专业提取与匹配 ====================
 
-# 113个本科专业关键词库
+# 113个本科专业关键词库（扩展版）
 MAJOR_KEYWORDS = {
-    '计算机科学与技术': ['计算机', 'CS', '软件', '程序', '码农', 'IT'],
-    '软件工程': ['软件工程', '软工', '开发'],
-    '电子信息工程': ['电子信息', '电信', '通信', '信号'],
-    '临床医学': ['临床', '医学', '医生', '医师'],
-    '金融学': ['金融', '经济', '投资', '银行', '证券'],
-    '会计学': ['会计', '财务', '审计', 'CPA'],
-    '法学': ['法学', '法律', '律师', '司法'],
-    '土木工程': ['土木', '建筑', '施工', '工程'],
-    '机械工程': ['机械', '制造', '机电'],
-    '电气工程': ['电气', '电力', '强电'],
-    '自动化': ['自动化', '控制'],
-    '通信工程': ['通信工程', '通信', '5G'],
-    '师范类': ['师范', '教育', '教师', '老师'],
-    '护理学': ['护理', '护士'],
-    '英语': ['英语', '英文', '翻译'],
-    '新闻学': ['新闻', '传播', '媒体', '记者'],
-    '生物工程': ['生物', '生工', '生化', '天坑'],
-    '化学类': ['化学', '化工'],
-    '材料类': ['材料', '高分子'],
-    '环境工程': ['环境', '环工', '环保']
+    '计算机科学与技术': ['计算机', 'CS', '软件', '程序', '码农', 'IT', '编程', '代码', '计科'],
+    '软件工程': ['软件工程', '软工', '开发', '程序员'],
+    '电子信息工程': ['电子信息', '电信', '通信', '信号', '电子工程'],
+    '临床医学': ['临床', '医学', '医生', '医师', '学医', '医学生'],
+    '金融学': ['金融', '投资', '银行', '证券', '基金', '金融学'],
+    '会计学': ['会计', '财务', '审计', 'CPA', '财会'],
+    '法学': ['法学', '法律', '律师', '司法', '法考', '法硕'],
+    '土木工程': ['土木', '建筑', '施工', '工程', '土建', '土木工程'],
+    '机械工程': ['机械', '制造', '机电', '机械工程', '机械设计'],
+    '电气工程': ['电气', '电力', '强电', '电气工程', '电工'],
+    '自动化': ['自动化', '控制', '自动控制'],
+    '通信工程': ['通信工程', '通信', '5G', '网络通信'],
+    '师范类': ['师范', '教育', '教师', '老师', '当老师', '教育学'],
+    '护理学': ['护理', '护士', '护理学'],
+    '英语': ['英语', '英文', '翻译', '外语', '英语专业'],
+    '新闻学': ['新闻', '传播', '媒体', '记者', '新闻学', '传媒'],
+    '生物工程': ['生物', '生工', '生化', '天坑', '生物工程', '生科'],
+    '化学类': ['化学', '化工', '化学工程'],
+    '材料类': ['材料', '高分子', '材料科学', '材料工程'],
+    '环境工程': ['环境', '环工', '环保', '环境工程'],
+    '经济学': ['经济学', '经济', '宏观', '微观'],
+    '工商管理': ['工商管理', '管理学', '企业管理', 'MBA'],
+    '市场营销': ['市场营销', '营销', '销售'],
+    '人力资源': ['人力资源', 'HR', '人事'],
+    '建筑学': ['建筑学', '建筑设计', '建筑师'],
+    '数学': ['数学', '数学专业', '应用数学', '数学系'],
+    '物理学': ['物理', '物理学', '物理系'],
+    '心理学': ['心理', '心理学', '心理咨询'],
+    '汉语言文学': ['汉语言', '中文', '文学', '中文系', '汉语'],
+    '历史学': ['历史', '历史学', '考古'],
+    '哲学': ['哲学', '哲学专业'],
+    '艺术设计': ['设计', '艺术设计', '平面设计', 'UI'],
+    '音乐': ['音乐', '音乐专业', '声乐'],
+    '美术': ['美术', '绑定', '美术生', '画画'],
+    '体育': ['体育', '体育专业', '体育生'],
+    '农学': ['农学', '农业', '种植'],
+    '兽医': ['兽医', '动物医学', '宠物医生'],
+    '药学': ['药学', '制药', '药剂'],
+    '中医学': ['中医', '中医学', '中药'],
+    '口腔医学': ['口腔', '牙医', '口腔医学'],
+    '人工智能': ['人工智能', 'AI', '机器学习', '深度学习'],
+    '数据科学': ['数据科学', '大数据', '数据分析'],
+    '网络安全': ['网络安全', '信息安全', '网安'],
+    '航空航天': ['航空航天', '飞行器', '航天'],
 }
 
-def extract_majors_from_comments(df):
-    """从评论中提取专业提及"""
+
+def extract_majors_from_text(df):
+    """从文本中提取专业提及"""
     
-    print("🔍 Extracting major mentions from comments...")
+    print("🔍 Extracting major mentions from texts...")
     
     def find_majors(text):
         text_lower = str(text).lower()
@@ -285,6 +426,7 @@ def extract_majors_from_comments(df):
     print(f"  ✅ Extracted {len(df_expanded):,} major mentions\n")
     
     return df_expanded
+
 
 def aggregate_sentiment_by_major(df):
     """按专业聚合情感分析结果"""
@@ -311,7 +453,7 @@ def aggregate_sentiment_by_major(df):
     # 重命名列
     major_sentiment = major_sentiment.rename(columns={
         'mentioned_majors': 'major',
-        'text': 'comment_count',
+        'text': 'mention_count',
         'likes': 'total_likes'
     })
     
@@ -320,20 +462,43 @@ def aggregate_sentiment_by_major(df):
         major_sentiment['positive_rate'] - major_sentiment['negative_rate']
     )
     
-    max_comments = major_sentiment['comment_count'].max()
+    max_mentions = major_sentiment['mention_count'].max()
     major_sentiment['recommendation_score'] = (
         major_sentiment['positive_rate'] * 
         major_sentiment['confidence'] * 
-        (major_sentiment['comment_count'] / max_comments) * 100
+        (major_sentiment['mention_count'] / max_mentions) * 100
     )
     
     print(f"  ✅ Aggregated {len(major_sentiment)} majors\n")
     
     return major_sentiment.sort_values('recommendation_score', ascending=False)
 
-# ==================== PART 4: 数据整合 ====================
 
-# ==================== PART 4: 数据整合（完全匹配你的数据）====================
+def aggregate_sentiment_by_major_and_type(df):
+    """按专业和数据类型分别聚合（用于对比分析）"""
+    
+    print("📊 Aggregating sentiment by major and data type...")
+    
+    result = df.groupby(['mentioned_majors', 'data_type']).agg({
+        'sentiment': lambda x: (x == 'positive').sum() / len(x) * 100,
+        'confidence': 'mean',
+        'text': 'count',
+        'likes': 'sum'
+    }).reset_index()
+    
+    result = result.rename(columns={
+        'mentioned_majors': 'major',
+        'sentiment': 'positive_rate',
+        'text': 'mention_count',
+        'likes': 'total_likes'
+    })
+    
+    print(f"  ✅ Aggregated {len(result)} major-type combinations\n")
+    
+    return result
+
+
+# ==================== PART 4: 数据整合 ====================
 
 def integrate_sentiment_and_employment(df_sentiment, df_employment):
     """整合舆情数据和就业数据 - 完全匹配版"""
@@ -378,7 +543,7 @@ def integrate_sentiment_and_employment(df_sentiment, df_employment):
         return None
     
     # 数据类型转换
-    df_merged['本科就业率'] = pd.to_numeric(df_merged['本科就业率'], errors='coerce') * 100  # 转为百分比
+    df_merged['本科就业率'] = pd.to_numeric(df_merged['本科就业率'], errors='coerce') * 100
     df_merged['本科月薪'] = pd.to_numeric(df_merged['本科月薪'], errors='coerce')
     df_merged['硕士就业率'] = pd.to_numeric(df_merged['硕士就业率'], errors='coerce') * 100
     df_merged['硕士月薪'] = pd.to_numeric(df_merged['硕士月薪'], errors='coerce')
@@ -391,10 +556,8 @@ def integrate_sentiment_and_employment(df_sentiment, df_employment):
     
     # 分类标签
     def classify_deviation(row):
-        # 高舆情低就业 = 被高估
         if row['sentiment_index'] > 20 and row['本科就业率'] < 85:
             return 'Overrated'
-        # 低舆情高就业 = 被低估
         elif row['sentiment_index'] < 0 and row['本科就业率'] > 88:
             return 'Underrated'
         else:
@@ -407,10 +570,11 @@ def integrate_sentiment_and_employment(df_sentiment, df_employment):
     
     return df_merged
 
+
 # ==================== PART 5: 核心可视化 ====================
 
 def create_enhanced_visualizations(df_integrated):
-    """创建增强版可视化 - 完整修复版"""
+    """创建增强版可视化"""
     
     if df_integrated is None or len(df_integrated) == 0:
         print("⚠️ No integrated data available")
@@ -425,7 +589,6 @@ def create_enhanced_visualizations(df_integrated):
     
     fig, ax = plt.subplots(figsize=(18, 12))
     
-    # 配色方案
     color_map = {
         'Matched': '#2ecc71',
         'Overrated': '#e74c3c',
@@ -438,7 +601,6 @@ def create_enhanced_visualizations(df_integrated):
         'Underrated': 's'
     }
     
-    # 绘制气泡
     for deviation_type in ['Matched', 'Overrated', 'Underrated']:
         df_type = df_integrated[df_integrated['deviation_type'] == deviation_type]
         
@@ -446,7 +608,7 @@ def create_enhanced_visualizations(df_integrated):
             ax.scatter(
                 df_type['本科就业率'],
                 df_type['sentiment_index'],
-                s=df_type['comment_count'] * 3,
+                s=df_type['mention_count'] * 3,
                 c=color_map[deviation_type],
                 alpha=0.6,
                 edgecolors='black',
@@ -456,7 +618,6 @@ def create_enhanced_visualizations(df_integrated):
                 zorder=3
             )
             
-            # 添加专业标签
             for idx, row in df_type.iterrows():
                 ax.annotate(
                     row['major'],
@@ -475,13 +636,11 @@ def create_enhanced_visualizations(df_integrated):
                     zorder=4
                 )
     
-    # 参考线
     ax.axhline(y=0, color='gray', linestyle='--', linewidth=1.5, alpha=0.5, zorder=1)
     ax.axvline(x=85, color='gray', linestyle='--', linewidth=1.5, alpha=0.5, zorder=1)
     ax.plot([65, 100], [-40, 50], 'k--', linewidth=2, alpha=0.3, 
             label='Ideal Match', zorder=2)
     
-    # 象限标注 - ✅ 修复这里的style参数
     ax.text(72, 45, 'HIGH Sentiment\nLOW Employment\n(Overrated)', 
            fontsize=12, alpha=0.6, fontstyle='italic', ha='center',
            bbox=dict(boxstyle='round,pad=0.5', facecolor='#e74c3c', alpha=0.2))
@@ -494,12 +653,11 @@ def create_enhanced_visualizations(df_integrated):
            fontsize=12, alpha=0.6, fontstyle='italic', ha='center',
            bbox=dict(boxstyle='round,pad=0.5', facecolor='#2ecc71', alpha=0.2))
     
-    # 轴标签
     ax.set_xlabel('Official Employment Rate (%)', fontsize=14, fontweight='bold')
     ax.set_ylabel('Social Media Sentiment Index\n(Positive% - Negative%)', 
                  fontsize=14, fontweight='bold')
     ax.set_title('Zhang Xuefeng Major Recommendation: Sentiment vs Reality\n' +
-                'Bubble Chart Analysis (BERT + Employment Data)',
+                'Bubble Chart Analysis (BERT + Employment Data + Contents)',
                 fontsize=17, fontweight='bold', pad=20)
     
     ax.set_xlim(65, 100)
@@ -544,7 +702,6 @@ def create_enhanced_visualizations(df_integrated):
     axes[0].legend(fontsize=11)
     axes[0].grid(axis='y', alpha=0.3)
     
-    # 学历溢价率
     df_plot2 = df_integrated.sort_values('学历薪资溢价率%', ascending=False).head(12)
     colors = plt.cm.RdYlGn(np.linspace(0.3, 0.9, len(df_plot2)))
     bars = axes[1].barh(df_plot2['major'], df_plot2['学历薪资溢价率%'], 
@@ -594,60 +751,65 @@ def create_enhanced_visualizations(df_integrated):
     print("="*70 + "\n")
 
 
-
-def create_all_visualizations(df_comments, df_sentiment, df_integrated):
+def create_all_visualizations(df_all, df_sentiment, df_integrated):
     """生成所有核心图表"""
     
     print("="*70)
     print("📊 Creating Visualizations")
     print("="*70 + "\n")
     
-    # 图1: 平台分布
-    fig1, ax1 = plt.subplots(figsize=(10, 6))
-    platform_counts = df_comments['platform'].value_counts()
+    # 图1: 平台和数据类型分布
+    fig1, axes = plt.subplots(1, 2, figsize=(14, 6))
+    
+    # 按平台分布
+    platform_counts = df_all['platform'].value_counts()
     colors = ['#FF6B6B', '#4ECDC4', '#45B7D1']
-    bars = ax1.bar(platform_counts.index, platform_counts.values, color=colors, alpha=0.8, edgecolor='black')
-    ax1.set_title('Comment Distribution by Platform', fontsize=15, fontweight='bold')
-    ax1.set_ylabel('Number of Comments')
-    ax1.grid(axis='y', alpha=0.3)
+    bars = axes[0].bar(platform_counts.index, platform_counts.values, color=colors, alpha=0.8, edgecolor='black')
+    axes[0].set_title('Distribution by Platform', fontsize=15, fontweight='bold')
+    axes[0].set_ylabel('Number of Records')
+    axes[0].grid(axis='y', alpha=0.3)
     for bar in bars:
         height = bar.get_height()
-        ax1.text(bar.get_x() + bar.get_width()/2., height,
+        axes[0].text(bar.get_x() + bar.get_width()/2., height,
                 f'{int(height):,}', ha='center', va='bottom', fontweight='bold')
-    plt.tight_layout()
-    plt.savefig('./output/figures/01_platform_distribution.png', dpi=300, bbox_inches='tight')
-    plt.close()
-    print("✅ Figure 1: Platform Distribution")
     
-    # 图2: BERT情感分布
-    fig2, axes = plt.subplots(1, 2, figsize=(14, 6))
-    
-    sentiment_counts = df_comments['sentiment'].value_counts()
-    colors_pie = ['#2ecc71', '#3498db', '#e74c3c']
-    explode = [0.05 if i == sentiment_counts.idxmax() else 0 for i in sentiment_counts.index]
-    
-    axes[0].pie(sentiment_counts, labels=sentiment_counts.index, autopct='%1.1f%%',
-               colors=colors_pie, explode=explode, shadow=True, startangle=90,
-               textprops={'fontsize': 11, 'fontweight': 'bold'})
-    axes[0].set_title('Overall Sentiment Distribution (BERT)', fontsize=14, fontweight='bold')
-    
-    sentiment_conf = df_comments.groupby('sentiment')['confidence'].mean()
-    bars = axes[1].bar(sentiment_conf.index, sentiment_conf.values,
-                       color=colors_pie, alpha=0.8, edgecolor='black')
-    axes[1].set_title('Average BERT Confidence by Sentiment', fontsize=14, fontweight='bold')
-    axes[1].set_ylabel('Confidence Score')
-    axes[1].set_ylim([0, 1])
+    # 按数据类型分布
+    type_counts = df_all['data_type'].value_counts()
+    colors_type = ['#9b59b6', '#3498db', '#e74c3c']
+    bars2 = axes[1].bar(type_counts.index, type_counts.values, color=colors_type[:len(type_counts)], alpha=0.8, edgecolor='black')
+    axes[1].set_title('Distribution by Data Type', fontsize=15, fontweight='bold')
+    axes[1].set_ylabel('Number of Records')
     axes[1].grid(axis='y', alpha=0.3)
-    
-    for bar in bars:
+    for bar in bars2:
         height = bar.get_height()
         axes[1].text(bar.get_x() + bar.get_width()/2., height,
-                    f'{height:.3f}', ha='center', va='bottom', fontweight='bold')
+                f'{int(height):,}', ha='center', va='bottom', fontweight='bold')
     
     plt.tight_layout()
-    plt.savefig('./output/figures/02_bert_sentiment_distribution.png', dpi=300, bbox_inches='tight')
+    plt.savefig('./output/figures/01_platform_type_distribution.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print("✅ Figure 2: BERT Sentiment Distribution")
+    print("✅ Figure 1: Platform & Type Distribution")
+    
+    # 图2: BERT情感分布（按数据类型）
+    fig2, axes = plt.subplots(1, 3, figsize=(16, 5))
+    
+    colors_pie = ['#2ecc71', '#3498db', '#e74c3c']
+    
+    for i, data_type in enumerate(df_all['data_type'].unique()):
+        df_type = df_all[df_all['data_type'] == data_type]
+        sentiment_counts = df_type['sentiment'].value_counts()
+        
+        axes[i].pie(sentiment_counts, labels=sentiment_counts.index, autopct='%1.1f%%',
+                   colors=colors_pie, shadow=True, startangle=90,
+                   textprops={'fontsize': 10, 'fontweight': 'bold'})
+        axes[i].set_title(f'{data_type.title()} Sentiment\n(n={len(df_type):,})', 
+                         fontsize=12, fontweight='bold')
+    
+    plt.suptitle('BERT Sentiment Distribution by Data Type', fontsize=14, fontweight='bold')
+    plt.tight_layout()
+    plt.savefig('./output/figures/02_bert_sentiment_by_type.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print("✅ Figure 2: BERT Sentiment by Data Type")
     
     # 图3: 专业推荐度排名
     top_majors = df_sentiment.head(15)
@@ -657,7 +819,7 @@ def create_all_visualizations(df_comments, df_sentiment, df_integrated):
     bars = ax3.barh(top_majors['major'], top_majors['recommendation_score'], color=colors, edgecolor='black')
     
     ax3.set_xlabel('Recommendation Score', fontsize=12)
-    ax3.set_title('Top 15 Majors - Social Media Recommendation Score\n(Based on BERT Sentiment Analysis)',
+    ax3.set_title('Top 15 Majors - Social Media Recommendation Score\n(Based on BERT Sentiment Analysis - Comments + Contents)',
                  fontsize=14, fontweight='bold')
     ax3.invert_yaxis()
     ax3.grid(axis='x', alpha=0.3)
@@ -699,20 +861,20 @@ def create_all_visualizations(df_comments, df_sentiment, df_integrated):
     
     # 图5: 舆情 vs 就业（如果有就业数据）
     if df_integrated is not None and len(df_integrated) > 0:
-        employment_col = '就业率' if '就业率' in df_integrated.columns else 'employment_rate'
+        employment_col = '本科就业率' if '本科就业率' in df_integrated.columns else 'employment_rate'
         
         if employment_col in df_integrated.columns:
             fig5 = px.scatter(
                 df_integrated,
                 x=employment_col,
                 y='sentiment_index',
-                size='comment_count',
+                size='mention_count',
                 color='positive_rate',
                 hover_data=['major'],
                 text='major',
                 color_continuous_scale='RdYlGn',
                 title='<b>Social Media Sentiment vs Official Employment Rate</b><br>' +
-                      '<sub>Size = Discussion Volume | Color = Positive Sentiment Rate</sub>',
+                      '<sub>Size = Discussion Volume | Color = Positive Sentiment Rate | Data = Comments + Contents</sub>',
                 labels={
                     employment_col: 'Official Employment Rate (%)',
                     'sentiment_index': 'Social Media Sentiment Index',
@@ -724,66 +886,139 @@ def create_all_visualizations(df_comments, df_sentiment, df_integrated):
             fig5.update_layout(width=1400, height=800)
             
             fig5.write_html('./output/figures/05_sentiment_vs_employment.html')
-            print("✅ Figure 5: Sentiment vs Employment")
+            print("✅ Figure 5: Sentiment vs Employment (Interactive)")
     
     print("\n" + "="*70)
-    print("✅ All visualizations completed!")
+    print("✅ All basic visualizations completed!")
     print("="*70 + "\n")
+
+
+def create_content_vs_comment_comparison(df_by_type):
+    """创建评论 vs 内容对比图"""
+    
+    print("📊 Creating Content vs Comment Comparison...")
+    
+    # 透视表
+    pivot = df_by_type.pivot_table(
+        index='major',
+        columns='data_type',
+        values='positive_rate',
+        aggfunc='first'
+    ).reset_index()
+    
+    # 选择同时有评论和内容数据的专业
+    valid_cols = [col for col in ['comment', 'content', 'video'] if col in pivot.columns]
+    if len(valid_cols) < 2:
+        print("  ⚠️ Not enough data types for comparison")
+        return
+    
+    pivot = pivot.dropna(subset=valid_cols[:2])
+    
+    if len(pivot) < 5:
+        print("  ⚠️ Not enough majors for comparison")
+        return
+    
+    fig, ax = plt.subplots(figsize=(12, 8))
+    
+    x = np.arange(len(pivot))
+    width = 0.25
+    
+    colors = ['#3498db', '#e74c3c', '#2ecc71']
+    
+    for i, col in enumerate(valid_cols):
+        if col in pivot.columns:
+            ax.bar(x + i*width, pivot[col], width, label=col.title(), 
+                  color=colors[i], alpha=0.8, edgecolor='black')
+    
+    ax.set_ylabel('Positive Sentiment Rate (%)', fontsize=12)
+    ax.set_title('Sentiment Comparison: Comments vs Contents vs Videos\n(by Major)',
+                fontsize=14, fontweight='bold')
+    ax.set_xticks(x + width)
+    ax.set_xticklabels(pivot['major'], rotation=45, ha='right')
+    ax.legend()
+    ax.grid(axis='y', alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig('./output/figures/08_content_vs_comment.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print("✅ Figure 8: Content vs Comment Comparison")
+
 
 # ==================== PART 6: 导出数据表 ====================
 
-def export_all_tables(df_comments, df_sentiment, df_integrated):
+def export_all_tables(df_all, df_sentiment, df_integrated, df_by_type):
     """导出所有数据表"""
     
     print("💾 Exporting data tables...\n")
     
-    # Table 1: 原始评论数据（带BERT结果）
-    df_comments.to_csv('./output/tables/01_bert_analyzed_comments.csv', 
-                      index=False, encoding='utf-8-sig')
-    print("✅ Table 1: BERT Analyzed Comments")
+    # Table 1: 原始数据（带BERT结果）
+    df_all.to_csv('./output/tables/01_bert_analyzed_all_data.csv', 
+                  index=False, encoding='utf-8-sig')
+    print("✅ Table 1: BERT Analyzed All Data (Comments + Contents)")
     
     # Table 2: 专业舆情汇总
     df_sentiment.to_csv('./output/tables/02_major_sentiment_summary.csv',
                        index=False, encoding='utf-8-sig')
     print("✅ Table 2: Major Sentiment Summary")
     
-    # Table 3: 整合数据（如果有）
+    # Table 3: 按数据类型分组的舆情
+    df_by_type.to_csv('./output/tables/03_sentiment_by_major_and_type.csv',
+                     index=False, encoding='utf-8-sig')
+    print("✅ Table 3: Sentiment by Major and Data Type")
+    
+    # Table 4: 整合数据（如果有）
     if df_integrated is not None and len(df_integrated) > 0:
-        df_integrated.to_csv('./output/tables/03_integrated_sentiment_employment.csv',
+        df_integrated.to_csv('./output/tables/04_integrated_sentiment_employment.csv',
                            index=False, encoding='utf-8-sig')
-        print("✅ Table 3: Integrated Analysis")
+        print("✅ Table 4: Integrated Analysis")
     
     print()
+
 
 # ==================== 主函数 ====================
 
 def main():
     """主执行流程"""
     
-    # Step 1: 加载评论数据
+    # Step 1: 加载所有数据
     loader = RealDataLoader()
+    
+    # 加载评论
     loader.load_all_comments()
     df_comments = loader.standardize_comments()
     
+    # 加载内容/帖子
+    loader.load_all_contents()
+    df_contents = loader.standardize_contents()
+    
+    # 合并所有数据
+    df_all = loader.merge_all_data(df_comments, df_contents)
+    
     # Step 2: BERT情感分析
     analyzer = RealBERTAnalyzer()
-    sentiment_results = analyzer.batch_predict(df_comments['text'].tolist())
+    sentiment_results = analyzer.batch_predict(df_all['text'].tolist())
     
-    df_comments['sentiment'] = [r[0] for r in sentiment_results]
-    df_comments['confidence'] = [r[1] for r in sentiment_results]
+    df_all['sentiment'] = [r[0] for r in sentiment_results]
+    df_all['confidence'] = [r[1] for r in sentiment_results]
     
     print("📊 BERT Sentiment Analysis Results:")
-    print(df_comments['sentiment'].value_counts())
-    print(f"\nAverage Confidence: {df_comments['confidence'].mean():.3f}\n")
+    print(df_all['sentiment'].value_counts())
+    print(f"\nAverage Confidence: {df_all['confidence'].mean():.3f}")
+    print(f"\nBy Data Type:")
+    print(df_all.groupby('data_type')['sentiment'].value_counts())
+    print()
     
     # Step 3: 提取专业提及
-    df_with_majors = extract_majors_from_comments(df_comments)
+    df_with_majors = extract_majors_from_text(df_all)
     
-    # Step 4: 按专业聚合
+    # Step 4: 按专业聚合（总体）
     df_sentiment = aggregate_sentiment_by_major(df_with_majors)
     
+    # Step 4b: 按专业和数据类型聚合（用于对比）
+    df_by_type = aggregate_sentiment_by_major_and_type(df_with_majors)
+    
     print("📊 Top 10 Recommended Majors (by sentiment):")
-    print(df_sentiment[['major', 'recommendation_score', 'positive_rate', 'comment_count']].head(10))
+    print(df_sentiment[['major', 'recommendation_score', 'positive_rate', 'mention_count']].head(10))
     print()
     
     # Step 5: 加载就业数据
@@ -795,26 +1030,35 @@ def main():
         df_integrated = integrate_sentiment_and_employment(df_sentiment, df_employment)
     
     # Step 7: 生成基础可视化
-    create_all_visualizations(df_comments, df_sentiment, df_integrated)
+    create_all_visualizations(df_all, df_sentiment, df_integrated)
     
+    # Step 8: 生成增强可视化
     create_enhanced_visualizations(df_integrated)
     
+    # Step 8b: 生成内容 vs 评论对比图
+    create_content_vs_comment_comparison(df_by_type)
+    
     # Step 9: 导出数据表
-    export_all_tables(df_comments, df_sentiment, df_integrated)
+    export_all_tables(df_all, df_sentiment, df_integrated, df_by_type)
     
     # 最终总结
     print("="*70)
     print("✅ ANALYSIS COMPLETED SUCCESSFULLY!")
     print("="*70)
-    print(f"📊 Total comments analyzed: {len(df_comments):,}")
+    print(f"📊 Total records analyzed: {len(df_all):,}")
+    print(f"   - Comments: {len(df_all[df_all['data_type']=='comment']):,}")
+    print(f"   - Contents: {len(df_all[df_all['data_type']=='content']):,}")
+    print(f"   - Videos: {len(df_all[df_all['data_type']=='video']):,}")
     print(f"🤖 BERT model used: uer/roberta-base-finetuned-jd-binary-chinese")
     print(f"📈 Majors extracted: {len(df_sentiment)}")
     print(f"📁 Output directory: ./output/")
     print("="*70 + "\n")
     
-    return df_comments, df_sentiment, df_integrated
+    return df_all, df_sentiment, df_integrated, df_by_type
+
 
 # ==================== 执行 ====================
 
 if __name__ == "__main__":
-    df_comments, df_sentiment, df_integrated = main()
+    df_all, df_sentiment, df_integrated, df_by_type = main()
+

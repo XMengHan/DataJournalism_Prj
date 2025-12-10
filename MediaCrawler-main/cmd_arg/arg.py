@@ -266,3 +266,11 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
         return result
     except typer.Exit as exc:  # pragma: no cover - CLI exit paths
         raise SystemExit(exc.exit_code) from exc
+
+
+# uv run main.py --platform wb --type search --start 1 --get_comment 1 --get_sub_comment 1 --save_data_option csv
+# uv run main.py --platform zhihu --type search --start 1 --get_comment 1 --get_sub_comment 1 --save_data_option csv
+# uv run main.py --platform bili --type search --start 1 --get_comment 1 --get_sub_comment 1 --save data_option csv
+# uv run main.py --platform wb --type search --start 1 --get_comment 1 --get_sub_comment 1 --save data_option csv --keywords "ai替代就业"
+# uv run main.py --platform zhihu --type search --start 1 --get_comment 1 --get_sub_comment 1 --save_data_option csv --keywords "ai替代就业"
+# uv run main.py --platform bili --type search --start 1 --get_comment 1 --get_sub_comment 1 --save_data_option csv --keywords "ai替代就业"

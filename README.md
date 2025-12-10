@@ -117,6 +117,7 @@ DataJournalism_MajorAnalysis/
 │       ├── 计算机科学与技术_training.png
 │       ├── 计算机科学与技术_forecast.png
 │       └── all_majors_comparison.png
+├── 📁 output/
 │
 ├── 📄 README.md                      # 本文件
 ├── 📄 requirements.txt               # Python依赖
