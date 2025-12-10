@@ -381,27 +381,23 @@ Callbacks: EarlyStopping, ReduceLROnPlateau
 ## 📈 Visualizations
 
 ### Figure 1: Platform Distribution
-
-![01_platform_distribution](.\.git\01_platform_distribution.png)
+<img src=".\visualizations\charts\01_platform_distribution.png" style="zoom:200%;" />
 
 - Shows comment distribution across Zhihu, Weibo, Bilibili
 
 ### Figure 2: BERT Sentiment Distribution
-
-![02_bert_sentiment_distribution](.\.git\02_bert_sentiment_distribution.png)
+<img src=".\visualizations\charts\02_bert_sentiment_distribution.png" style="zoom:200%;" />
 
 - Pie chart of overall sentiment
 - Bar chart of confidence scores
 
 ### Figure 3: Top 15 Majors Recommendation Ranking
-
-![03_recommendation_ranking](.\.git\03_recommendation_ranking.png)
+<img src=".\visualizations\charts\03_recommendation_ranking.png" style="zoom:200%;" />
 
 - Horizontal bar chart sorted by recommendation score
 
 ### Figure 4: Sentiment Comparison
-
-![04_sentiment_comparison](.\.git\04_sentiment_comparison.png)
+<img src=".\visualizations\charts\04_sentiment_comparison.png" style="zoom:200%;" />
 
 - Positive vs Negative rates for top majors
 
@@ -422,15 +418,14 @@ Callbacks: EarlyStopping, ReduceLROnPlateau
 - **Quadrants**: Clearly marked zones
 
 ### Figure 6: Salary Comparison
-
-![06_salary_comparison](.\.git\06_salary_comparison.png)
+<img src=".\visualizations\charts\06_salary_comparison.png" style="zoom:200%;" />
 
 - Bachelor vs Master salary comparison
 - Education premium rate ranking
 
 ### Figure 7: Employment Improvement
+<img src=".\visualizations\charts\07_employment_improvement.png" style="zoom:200%;" />
 
-![07_employment_improvement](.\.git\07_employment_improvement.png)
 
 - Employment rate boost from pursuing master's degree
 
@@ -592,9 +587,9 @@ in the Software without restriction...
 
 ### Author
 
-- **Name**: [Your Name]
-- **Email**: [your.email@example.com](mailto:your.email@example.com)
-- **GitHub**: [@yourusername](https://github.com/yourusername)
+- **Name**: [XuHaoran]
+- **Email**: [xuhaoran.whu@qq.com](mailto:your.email@example.com)
+- **GitHub**: [@XMengHan](https://github.com/yourusername)
 
 ### Contributing
 
@@ -620,7 +615,7 @@ If you use this project in your research, please cite:
 
 ```bibtex
 @misc{zhang_major_analysis_2025,
-  author = {Your Name},
+  author = {MengXiaohan@whu.edu.cn},
   title = {Zhang Xuefeng Major Recommendation Analysis: Sentiment vs Reality},
   year = {2025},
   publisher = {GitHub},
