@@ -13,24 +13,6 @@
 
 ------
 
-## 📋 Table of Contents | 目录
-
-- [🎯 Project Overview](https://vip.51kaixin.cloud/c/7a7d811c-8b3c-4cd8-b327-19a74259d27d#-project-overview)
-- [✨ Key Features](https://vip.51kaixin.cloud/c/7a7d811c-8b3c-4cd8-b327-19a74259d27d#-key-features)
-- [🏗️ Project Structure](https://vip.51kaixin.cloud/c/7a7d811c-8b3c-4cd8-b327-19a74259d27d#️-project-structure)
-- [🔧 Installation](https://vip.51kaixin.cloud/c/7a7d811c-8b3c-4cd8-b327-19a74259d27d#-installation)
-- [🚀 Quick Start](https://vip.51kaixin.cloud/c/7a7d811c-8b3c-4cd8-b327-19a74259d27d#-quick-start)
-- [📊 Data Sources](https://vip.51kaixin.cloud/c/7a7d811c-8b3c-4cd8-b327-19a74259d27d#-data-sources)
-- [🤖 Models & Algorithms](https://vip.51kaixin.cloud/c/7a7d811c-8b3c-4cd8-b327-19a74259d27d#-models--algorithms)
-- [📈 Visualizations](https://vip.51kaixin.cloud/c/7a7d811c-8b3c-4cd8-b327-19a74259d27d#-visualizations)
-- [🔮 LSTM Prediction Module](https://vip.51kaixin.cloud/c/7a7d811c-8b3c-4cd8-b327-19a74259d27d#-lstm-prediction-module)
-- [📄 Output Files](https://vip.51kaixin.cloud/c/7a7d811c-8b3c-4cd8-b327-19a74259d27d#-output-files)
-- [🛠️ Technical Stack](https://vip.51kaixin.cloud/c/7a7d811c-8b3c-4cd8-b327-19a74259d27d#️-technical-stack)
-- [📝 License](https://vip.51kaixin.cloud/c/7a7d811c-8b3c-4cd8-b327-19a74259d27d#-license)
-- [🙏 Acknowledgments](https://vip.51kaixin.cloud/c/7a7d811c-8b3c-4cd8-b327-19a74259d27d#-acknowledgments)
-
-------
-
 ## 🎯 Project Overview
 
 This project investigates **whether popular career advice influencer Zhang Xuefeng's major recommendations align with actual employment data**. We combine:
